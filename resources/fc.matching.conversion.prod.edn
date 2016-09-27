@@ -1,0 +1,10 @@
+{:group.id "fc.matching.conversion.prod"
+ :kafka.zk.connect "server-0.zookeeper.yb0t.com:2181,server-1.zookeeper.yb0t.com:2181,server-2.zookeeper.yb0t.com:2181/kafka"
+ :kafka.producer.list "broker-0.kafka.yb0t.com:9092,broker-1.kafka.yb0t.com:9092,broker-2.kafka.yb0t.com:9092,broker-3.kafka.yb0t.com:9092"
+ ;:topic.name "unmatched-conversion"
+ :num.threads 1
+ :es.url "http://criticales.elasticsearch.service.consul:9200"
+ :batch.size 5
+ :health.port 31512
+ :batch.handler "fc.conversion.matching"
+ }
