@@ -81,10 +81,20 @@
   (log/info (format "******ES add pending-conversion ri=%s, sts=%s" (get event "ri") (get event "sts")))
   (let [attempts (get event "attempts" 0)
         conn (esr/connect (get props :es.url))
-        index-name "pending-conversion-temp"
+        index-name "pending-conversion-temp-1"
         c-id  (str (get event "ri") "-" (get event "sts"))
         new-event (assoc event
                          "attempts" (inc attempts))]
+    (esrd/put conn index-name "conversion" c-id new-event)))
+
+(defn add-pending-conversion-badevents
+  [props event]
+  (log/info (format "******ES add pending-conversion-badevents ri=%s, sts=%s" (get event "ri") (get event "sts")))
+  (let [attempts (get event "attempts" 0)
+        conn (esr/connect (get props :es.url))
+        index-name "pending-conversion-temp-badevents"
+        c-id  (str (get event "ri") "-" (get event "sts"))
+        new-event (assoc event "reason" "14-cnt-2")]
     (esrd/put conn index-name "conversion" c-id new-event)))
 
 (defn get-server-timestamp
@@ -126,7 +136,11 @@
       (do
         (log/info "conversion against 30 day old click/impr, parent-info=" parent-info)
         (log/info "conversion against 30 day old click/impr, parent-sts=" (get parent-info "sts" 0) " event=" event)
-        (send-kafka-msg props bad-event-topic (assoc event
+        (add-pending-conversion-badevents props 
+                                        (assoc event
+                                                     "reason" (str "conversion against 30 day old click/impr, parent-sts=" (get parent-info "sts" 0))
+                                                     "psn" bad-data-psn))
+        (send-kafka-msg-backup props bad-event-topic (assoc event
                                                      "reason" (str "conversion against 30 day old click/impr, parent-sts=" (get parent-info "sts" 0))
                                                      "psn" bad-data-psn)))
       (let [final-event (merge-parent-event event parent-info)]
@@ -144,8 +158,12 @@
 (defn drop-expired-conversion
   [props event pending-cv-key pending-index]
   (log/info (format "conversion attempts more than %s, expiring it, pending-cv-key=%s" max-attempts pending-cv-key))
-  (send-kafka-msg props bad-event-topic
+  (send-kafka-msg-backup props bad-event-topic
                   (assoc event
+                         "reason" "conversion attempts more than 30"
+                         "psn" bad-data-psn))
+  (add-pending-conversion-badevents props 
+                    (assoc event
                          "reason" "conversion attempts more than 30"
                          "psn" bad-data-psn))
   (remove-pending-cv-key props pending-index pending-cv-key))
@@ -177,7 +195,7 @@
         psn (get json-msg "psn" nil)
         event (assoc json-msg "cvsrc" cvsrc "psn" psn)]
     (if-not ri
-      (send-kafka-msg props bad-event-topic (assoc json-msg
+      (send-kafka-msg-backup props bad-event-topic (assoc json-msg
                                                    "reason" "no ri present"
                                                    "psn" bad-data-psn))
       (if (nil? psn)
@@ -185,7 +203,7 @@
           c-src-unknown (send-kafka-msg props matched-conversion-topic event)
           c-src-click (match-conversion props event cvsrc ri pending-cv-key pending-index)
           c-src-impr (match-conversion props event cvsrc ri pending-cv-key pending-index)
-          (send-kafka-msg props bad-event-topic (assoc event
+          (send-kafka-msg-backup props bad-event-topic (assoc event
                                                        "reason" "unnexpected cvsrc"
                                                        "psn" bad-data-psn)))))))
 
@@ -194,7 +212,7 @@
   (while true
     (try
       (let [conn (esr/connect (get props :es.url))
-            pending-index "pending-conversion-temp"
+            pending-index "pending-conversion-temp-1"
             results (esrd/search conn pending-index "conversion" :size 5000 :query (q/match-all))
             total-pending ((results :hits) :total)
             rows (->> results esrsp/hits-from (map :_id))]
@@ -205,15 +223,11 @@
             (handle-conversion props (get-content (into {}(->> results1 esrsp/hits-from (map :_source)))) key pending-index))))
       (catch Exception e
         (log/error (str "run-pending-reads caught exception e=" e))))
-    (Thread/sleep 60000)))
-
-
-
+    (Thread/sleep 6000)))
 
 (defn handle-kafka-batch
   [props json-docs]
   (doseq [json-msg @json-docs] (handle-conversion props json-msg nil nil)))
-
 
 (defn init
   [props]
@@ -224,9 +238,5 @@
             (run-pending-reads props)
             (catch Exception e
               (log/info (str "launch-pending-reads loop caught exception " (.getMessage e)))))))
-
-  
-
-
   
 ;;TBD need to create an alert , fail consul check

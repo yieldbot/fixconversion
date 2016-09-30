@@ -99,16 +99,16 @@
 (defn fixconv-events
   [props]
       (let [conn (esr/connect (get props :es.url))
-            pending-index "adevents-2016-09-12"
+            ;pending-index "adevents-2016-09-12"
             ;pending-index "adevents-2016-09-13"
             ;pending-index "adevents-2016-09-13,adevents-2016-09-14"
             ;pending-index "adevents-2016-09-14"
-            ;pending-index "adevents-2016-09-14"
-            results (esrd/search conn pending-index "conversion" :size 4000 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473709020000" :lt "1473886800000"}}}}})
+            pending-index "adevents-2016-09-14"
+            ;results (esrd/search conn pending-index "conversion" :size 4000 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473709020000" :lt "1473886800000"}}}}})
             ;results (esrd/search conn pending-index "conversion" :size 6500 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473709020000" :lt "1473771600000"}}}}})
             ;results (esrd/search conn pending-index "conversion" :size 6500 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473771600000" :lt "1473800000000"}}}}})
             ;results (esrd/search conn pending-index "conversion" :size 4500 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473800000000" :lt "1473850000000"}}}}})
-            ;results (esrd/search conn pending-index "conversion" :size 9000 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473850000000" :lt "1473886800000"}}}}})
+            results (esrd/search conn pending-index "conversion" :size 9000 :query (q/match-all) :filter {:bool {:must {:range {:sts {:gte "1473850000000" :lt "1473886800000"}}}}})
 
             total-pending ((results :hits) :total)
             rows (->> results esrsp/hits-from (map :_id))]
@@ -117,7 +117,7 @@
           (let[results1 (esrd/search conn pending-index "conversion" :filter {:bool {:must {:term {:_id key}}}})
             json-msg (get-content (into {}(->> results1 esrsp/hits-from (map :_source))))]
             (swap! cnt inc)
-            (log/info "12-cnt=" cnt "ri-sts *********** heremap" key (get-content (into {}(->> results1 esrsp/hits-from (map :_source)))))
+            (log/info "14-cnt-2=" cnt "ri-sts *********** heremap" key (get-content (into {}(->> results1 esrsp/hits-from (map :_source)))))
             ;;(log/info "key="key "****rows=" rows )
             ;(log/info "ri-sts *********** heremap" key (get-content (into {}(->> results1 esrsp/hits-from (map :_source)))))
             (collect-kafka-msg props json-msg)))))

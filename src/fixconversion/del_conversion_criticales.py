@@ -8,14 +8,14 @@
 
 #execute function to save ids
 #in /tmp
-#awk '!seen[$0]++' cold-12-psnNull.txt > sorted_cold_ids_12
-#curl -s -XPOST http://analytics-coldevents.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-12/conversion/_bulk --data-binary "@sorted_cold_ids_12"; echo
+#awk '!seen[$0]++' critical-12-psnNull.txt > sorted_critical_ids_12
+#curl -s -XPOST http://criticales.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-12/conversion/_bulk --data-binary "@sorted_critical_ids_12"; echo
 
-#awk '!seen[$0]++' cold-13-psnNull.txt > sorted_cold_ids_13
-#curl -s -XPOST http://analytics-coldevents.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-13/conversion/_bulk --data-binary "@sorted_cold_ids_13"; echo
+#awk '!seen[$0]++' critical-13-psnNull.txt > sorted_critical_ids_13
+#curl -s -XPOST http://criticales.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-13/conversion/_bulk --data-binary "@sorted_critical_ids_13"; echo
 
-#awk '!seen[$0]++' cold-14-psnNull.txt > sorted_cold_ids_14
-#curl -s -XPOST http://analytics-coldevents.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-14/conversion/_bulk --data-binary "@sorted_cold_ids_14"; echo
+#awk '!seen[$0]++' critical-14-psnNull.txt > sorted_critical_ids_14
+#curl -s -XPOST http://criticales.elasticsearch.service.us-east-1.consul:9200/adevents-2016-09-14/conversion/_bulk --data-binary "@sorted_critical_ids_14"; echo
 
 
 import datetime
@@ -50,12 +50,12 @@ log = getLogger( __name__ )
 
 def get_psnNull_recs():
 	es_index = "adevents-2016-09-14" 
-	url = "http://analytics-coldevents.elasticsearch.service.us-east-1.consul:9200/%s/conversion/_search"%( es_index)
+	url = "http://criticales.elasticsearch.service.us-east-1.consul:9200/%s/conversion/_search"%( es_index)
 	sts_lt = "1473886800000"
-	sts_gte =  "1473709020000"
+	sts_gte =  "1473800000000"
 	body = {}
 	body = {}
-	body["size"] = 2400
+	body["size"] = 8000
  	body["query"] = {"filtered": {"filter": {"bool": {"must_not":[{"exists":{"field":"psn"}}],"must":[{"range":{"sts": {"gte": sts_gte,"lt":sts_lt ,"format":"epoch_millis"}}}]}}}}
 	#print json.dumps(body)
 	resp = requests.get(url, headers={}, data=json.dumps(body))
@@ -65,8 +65,8 @@ def get_psnNull_recs():
 		sys.exit(2)
 	respjson = resp.json()
 	if respjson['hits']['total'] == 0 :
-		print "Document missing for 14 timestamp=%s to %s" %( sts_gte,sts_lt)
-	print "%s Document found for 14 timestamp=%s to %s" %(respjson['hits']['total'], sts_gte,sts_lt)
+		print "Document missing for 13 timestamp=%s to %s" %( sts_gte,sts_lt)
+	print "%s Document found for 13 timestamp=%s to %s" %(respjson['hits']['total'], sts_gte,sts_lt)
 	data = [doc for doc in respjson['hits']['hits']]
 	for doc in data:
 		print doc["_id"]
@@ -77,7 +77,7 @@ def get_psnNull_recs():
 		#print stmt
 		stmt = "{ \"delete\" : { \"_id\" : \"" + tid +"\" } }"
 		print stmt
-		with open ('/tmp/cold-14-psnNull.txt', 'a') as f: f.write (str(stmt)+'\n')
+		with open ('/tmp/critical-13-psnNull.txt', 'a') as f: f.write (str(stmt)+'\n')
 
 
 

@@ -52,8 +52,7 @@
     "videoevent" (select-keys event esevents/videoevent_event_fields)
     "testclick" (select-keys event esevents/click_event_fields)
     "testadimpression" (select-keys event esevents/adimpression_event_fields)
-    "testconversion" (select-keys event esevents/conversion_event_fields)
-    "bad-event" (select-keys event esevents/conversion_event_fields)))
+    "testconversion" (select-keys event esevents/conversion_event_fields)))
 
 (defn filter-nested-fields
   [event]

@@ -4,7 +4,7 @@
  ;:topic.name "unmatched-conversion"
  :num.threads 1
  :es.url "http://criticales.elasticsearch.service.consul:9200"
- :batch.size 5
+ :batch.size 10
  :health.port 31512
  :batch.handler "fc.conversion.matching"
  }
